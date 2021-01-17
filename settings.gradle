@@ -1,0 +1,3 @@
+include ':notdieservice'
+include ':app'
+rootProject.name = "AndroidAPI"
