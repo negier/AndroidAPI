@@ -10,16 +10,28 @@ import androidx.annotation.NonNull;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.recyclerview.widget.SortedList;
 
+import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+
 public class DynamicSortAnimRecyclerAdapter extends RecyclerView.Adapter<DynamicSortAnimRecyclerAdapter.ViewHolder> {
-    private SortedList<Datum> list = new SortedList<>(Datum.class, new SortedList.Callback<Datum>() {
+    private final Comparator<Datum> mComparator = new Comparator<Datum>() {
         @Override
         public int compare(Datum o1, Datum o2) {
-            Log.e("TAG","compare");
             if (o1.getTime()!=o2.getTime()){
                 // 按时间从小到大排序
                 return Long.signum(o1.getTime() - o2.getTime());
             }
             return 0;
+        }
+    };
+
+    private SortedList<Datum> sortedList = new SortedList<>(Datum.class, new SortedList.Callback<Datum>() {
+        @Override
+        public int compare(Datum o1, Datum o2) {
+            Log.e("TAG","compare");
+            return mComparator.compare(o1,o2);
         }
 
         @Override
@@ -31,7 +43,7 @@ public class DynamicSortAnimRecyclerAdapter extends RecyclerView.Adapter<Dynamic
         @Override
         public boolean areContentsTheSame(Datum oldItem, Datum newItem) {
             Log.e("TAG","areContentsTheSame");
-            return false;
+            return oldItem.getName().equals(newItem.getName());
         }
 
         @Override
@@ -63,11 +75,31 @@ public class DynamicSortAnimRecyclerAdapter extends RecyclerView.Adapter<Dynamic
     });
 
     public void addItem(Datum datum){
-        list.add(datum);
+        sortedList.add(datum);
     }
 
     public void removeItem(Datum datum){
-        list.remove(datum);
+        sortedList.remove(datum);
+    }
+
+    /**
+     * 演示SortList的批量操作，这里的逻辑是先动态删除不含list中的数据，然后再追加一套最加上来。
+     * @param list
+     */
+    public void batchOperateReplaceAllItem(List<Datum> list){
+        sortedList.beginBatchedUpdates();
+        Datum[] sortedArray = list.toArray((Datum[])Array.newInstance(Datum.class,list.size()));
+        Arrays.sort(sortedArray,mComparator);
+        //todo 这里倒序遍历就可以避免删除后索引变化的错误
+        for(int i = sortedList.size()-1;i>=0;i--){
+            Datum datum = sortedList.get(i);
+            int result = Arrays.binarySearch(sortedArray, datum, mComparator);
+            if (result<0){
+                sortedList.remove(datum);
+            }
+        }
+        sortedList.addAll(list);
+        sortedList.endBatchedUpdates();
     }
 
     @NonNull
@@ -79,7 +111,7 @@ public class DynamicSortAnimRecyclerAdapter extends RecyclerView.Adapter<Dynamic
 
     @Override
     public void onBindViewHolder(@NonNull DynamicSortAnimRecyclerAdapter.ViewHolder holder, int position) {
-        Datum datum = list.get(position);
+        Datum datum = sortedList.get(position);
         String name = datum.getName();
         long time = datum.getTime();
         holder.textName.setText(name);
@@ -88,7 +120,7 @@ public class DynamicSortAnimRecyclerAdapter extends RecyclerView.Adapter<Dynamic
 
     @Override
     public int getItemCount() {
-        return list.size();
+        return sortedList.size();
     }
 
     public class ViewHolder extends RecyclerView.ViewHolder {
