@@ -14,6 +14,8 @@ import java.util.List;
  *  核心SortedList.Callback
  *
  *  SortedList内部是会自动去重的。判断元素是否相同的代码在compare回调里由您实现。
+ *
+ *  todo 另外这个仅适合 搜索 场景，其它情况不适合
  */
 public class MainActivity extends AppCompatActivity {
 
