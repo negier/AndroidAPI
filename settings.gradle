@@ -1,3 +1,4 @@
+include ':collapsechildview'
 include ':dynamicsortanim'
 include ':notdieservice'
 include ':app'
